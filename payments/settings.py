@@ -40,9 +40,3 @@ if isinstance(PLAN_QUANTITY_CALLBACK, six.string_types):
     PLAN_QUANTITY_CALLBACK = load_path_attr(PLAN_QUANTITY_CALLBACK)
 
 SEND_EMAIL_RECEIPTS = getattr(settings, "SEND_EMAIL_RECEIPTS", True)
-
-
-def plan_from_stripe_id(stripe_id):
-    for key in PAYMENTS_PLANS.keys():
-        if PAYMENTS_PLANS[key].get("stripe_plan_id") == stripe_id:
-            return key

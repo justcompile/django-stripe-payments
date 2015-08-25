@@ -11,8 +11,9 @@ from django.contrib.auth import authenticate, login, logout
 from mock import Mock
 
 from ..middleware import ActiveSubscriptionMiddleware
-from ..models import Customer, CurrentSubscription
+from ..models import Customer, CurrentSubscription, PaymentPlan
 from ..utils import get_user_model
+from .plans import PLANS
 
 
 class DummySession(dict):
@@ -38,6 +39,8 @@ class ActiveSubscriptionMiddlewareTests(TestCase):
             'signup',
             'password_reset'
         )
+
+        PaymentPlan.objects.bulk_create(PLANS)
 
         user = get_user_model().objects.create_user(username="patrick")
         user.set_password("eldarion")
@@ -90,7 +93,7 @@ class ActiveSubscriptionMiddlewareTests(TestCase):
         )
         CurrentSubscription.objects.create(
             customer=customer,
-            plan="pro",
+            plan=PaymentPlan.objects.get(key="pro"),
             quantity=1,
             start=timezone.now(),
             status="active",

@@ -5,9 +5,10 @@ from django.test import TestCase
 
 from mock import patch, PropertyMock, Mock
 
-from ..models import Customer, Charge
+from ..models import Customer, Charge, PaymentPlan
 from ..signals import card_changed
 from ..utils import get_user_model
+from .plans import PLANS
 
 
 class TestCustomer(TestCase):
@@ -24,6 +25,8 @@ class TestCustomer(TestCase):
             card_last_4="2342",
             card_kind="Visa"
         )
+
+        PaymentPlan.objects.bulk_create(PLANS)
 
     @patch("stripe.Customer.retrieve")
     @patch("stripe.Customer.create")
@@ -68,7 +71,7 @@ class TestCustomer(TestCase):
         _, kwargs = CreateMock.call_args
         self.assertEqual(kwargs["email"], self.user.email)
         self.assertEqual(kwargs["card"], "token232323")
-        self.assertEqual(kwargs["plan"], "pro-monthly")
+        self.assertEqual(kwargs["plan"].stripe_plan_id, "pro-monthly")
         self.assertIsNotNone(kwargs["trial_end"])
         self.assertTrue(InvoiceMock.called)
         self.assertTrue(customer.current_subscription.plan, "pro")

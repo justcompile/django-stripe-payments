@@ -11,9 +11,10 @@ import stripe
 
 from mock import patch
 
-from ..models import Customer, CurrentSubscription
+from ..models import Customer, CurrentSubscription, PaymentPlan
 from ..utils import get_user_model
 from ..views import SubscribeView
+from .plans import PLANS
 
 
 class PaymentsContextMixinTests(TestCase):
@@ -35,6 +36,7 @@ class SubscribeViewTests(TestCase):
 class AjaxViewsTests(TestCase):
 
     def setUp(self):
+        PaymentPlan.objects.bulk_create(PLANS)
         self.password = "eldarion"
         self.user = get_user_model().objects.create_user(
             username="patrick",
@@ -47,7 +49,7 @@ class AjaxViewsTests(TestCase):
         )
         CurrentSubscription.objects.create(
             customer=customer,
-            plan="pro",
+            plan=PaymentPlan.objects.get(key='pro'),
             quantity=1,
             start=timezone.now(),
             status="active",

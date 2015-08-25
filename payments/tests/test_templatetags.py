@@ -7,11 +7,12 @@ from django.contrib.auth import authenticate, login
 
 from mock import Mock
 
-from ..models import CurrentSubscription, Customer
+from ..models import CurrentSubscription, Customer, PaymentPlan
 from ..templatetags.payments_tags import change_plan_form, subscribe_form
 from ..utils import get_user_model
 
 from .test_middleware import DummySession
+from .plans import PLANS
 
 
 class PaymentsTagTests(TestCase):
@@ -23,13 +24,14 @@ class PaymentsTagTests(TestCase):
         user = get_user_model().objects.create_user(username="patrick")
         user.set_password("eldarion")
         user.save()
+        PaymentPlan.objects.bulk_create(PLANS)
         customer = Customer.objects.create(
             stripe_id="cus_1",
             user=user
         )
         CurrentSubscription.objects.create(
             customer=customer,
-            plan="pro",
+            plan=PaymentPlan.objects.get(key="pro"),
             quantity=1,
             start=timezone.now(),
             status="active",

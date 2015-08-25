@@ -21,8 +21,8 @@ from .managers import CustomerManager, ChargeManager, TransferManager
 from .settings import (
     DEFAULT_PLAN,
     INVOICE_FROM_EMAIL,
-    PAYMENTS_PLANS,
-    plan_from_stripe_id,
+    #PAYMENTS_PLANS,
+    #plan_from_stripe_id,
     SEND_EMAIL_RECEIPTS,
     TRIAL_PERIOD_FOR_USER_CALLBACK,
     PLAN_QUANTITY_CALLBACK
@@ -293,6 +293,29 @@ class Transfer(StripeObject):
             obj.update_status()
 
 
+class PaymentPlan(models.Model):
+    INTERVAL_CHOICES = (
+        ('month', 'Monthly'),
+    )
+
+    name = models.CharField(max_length=100)
+    key = models.CharField(max_length=20, unique=True, db_index=True)
+
+    stripe_plan_id = models.CharField(max_length=50, unique=True, db_index=True, null=True, blank=True)
+    description = models.TextField(max_length=300, null=True, blank=True)
+    price = models.DecimalField(max_digits=11, decimal_places=2, null=True, blank=True)
+    interval = models.CharField(max_length=10, choices=INTERVAL_CHOICES, null=True, blank=True)
+    currency = models.CharField(max_length=3, default='usd', null=True, blank=True)
+    trial_period_days = models.IntegerField(default=None, blank=True, null=True)
+
+
+def plan_from_stripe_id(stripe_id):
+    try:
+        return PaymentPlan.objects.get(stripe_plan_id=stripe_id)
+    except PaymentPlan.DoesNotExist:
+        return None
+
+
 class TransferChargeFee(models.Model):
 
     transfer = models.ForeignKey(Transfer, related_name="charge_fee_details")
@@ -376,9 +399,9 @@ class Customer(StripeObject):
     def create(cls, user, card=None, plan=None, charge_immediately=True):
 
         if card and plan:
-            plan = PAYMENTS_PLANS[plan]["stripe_plan_id"]
+            plan = PaymentPlan.objects.get(key=plan)
         elif DEFAULT_PLAN:
-            plan = PAYMENTS_PLANS[DEFAULT_PLAN]["stripe_plan_id"]
+            plan = PaymentPlan.objects.get(key=DEFAULT_PLAN)
         else:
             plan = None
 
@@ -559,7 +582,7 @@ class Customer(StripeObject):
         if token:
             subscription_params["card"] = token
 
-        subscription_params["plan"] = PAYMENTS_PLANS[plan]["stripe_plan_id"]
+        subscription_params["plan"] = PaymentPlan.objects.get(key=plan).stripe_plan_id
         subscription_params["quantity"] = quantity
         subscription_params["coupon"] = coupon
         resp = cu.update_subscription(**subscription_params)
@@ -610,7 +633,7 @@ class CurrentSubscription(models.Model):
         related_name="current_subscription",
         null=True
     )
-    plan = models.CharField(max_length=100)
+    plan = models.ForeignKey(PaymentPlan, null=True, blank=True)
     quantity = models.IntegerField()
     start = models.DateTimeField()
     # trialing, active, past_due, canceled, or unpaid
@@ -631,7 +654,7 @@ class CurrentSubscription(models.Model):
         return self.amount * self.quantity
 
     def plan_display(self):
-        return PAYMENTS_PLANS[self.plan]["name"]
+        return self.plan.name
 
     def status_display(self):
         return self.status.replace("_", " ").title()
@@ -799,11 +822,11 @@ class InvoiceItem(models.Model):
     proration = models.BooleanField(default=False)
     line_type = models.CharField(max_length=50)
     description = models.CharField(max_length=200, blank=True)
-    plan = models.CharField(max_length=100, blank=True)
+    plan = models.ForeignKey(PaymentPlan, blank=True)
     quantity = models.IntegerField(null=True)
 
     def plan_display(self):
-        return PAYMENTS_PLANS[self.plan]["name"]
+        return self.plan.name
 
 
 class Charge(StripeObject):

@@ -5,7 +5,7 @@ from django.test import TestCase
 from django.utils import timezone
 
 from . import TRANSFER_CREATED_TEST_DATA, TRANSFER_CREATED_TEST_DATA2
-from ..models import Event, Transfer, Customer, CurrentSubscription, Charge
+from ..models import Event, Transfer, Customer, CurrentSubscription, Charge, PaymentPlan
 from ..utils import get_user_model
 
 
@@ -17,6 +17,10 @@ class CustomerManagerTest(TestCase):
         period_start = datetime.datetime(2013, 4, 1, tzinfo=timezone.utc)
         period_end = datetime.datetime(2013, 4, 30, tzinfo=timezone.utc)
         start = datetime.datetime(2013, 1, 1, tzinfo=timezone.utc)
+
+        self.test_plan = PaymentPlan.objects.create(name='Test Plan', key='test', stripe_plan_id='test')
+        self.test_plan2 = PaymentPlan.objects.create(name='Test Plan 2', key='test-2', stripe_plan_id='test-2')
+
         for i in range(10):
             customer = Customer.objects.create(
                 user=User.objects.create_user(username="patrick{0}".format(i)),
@@ -27,7 +31,7 @@ class CustomerManagerTest(TestCase):
             )
             CurrentSubscription.objects.create(
                 customer=customer,
-                plan="test",
+                plan=self.test_plan,
                 current_period_start=period_start,
                 current_period_end=period_end,
                 amount=(500 / decimal.Decimal("100.0")),
@@ -44,7 +48,7 @@ class CustomerManagerTest(TestCase):
         )
         CurrentSubscription.objects.create(
             customer=customer,
-            plan="test",
+            plan=self.test_plan,
             current_period_start=period_start,
             current_period_end=period_end,
             amount=(500 / decimal.Decimal("100.0")),
@@ -62,7 +66,7 @@ class CustomerManagerTest(TestCase):
         )
         CurrentSubscription.objects.create(
             customer=customer,
-            plan="test-2",
+            plan=self.test_plan2,
             current_period_start=period_start,
             current_period_end=period_end,
             amount=(500 / decimal.Decimal("100.0")),
@@ -103,23 +107,23 @@ class CustomerManagerTest(TestCase):
 
     def test_started_plan_summary(self):
         for plan in Customer.objects.started_plan_summary_for(2013, 1):
-            if plan["current_subscription__plan"] == "test":
+            if plan["current_subscription__plan"] == self.test_plan.id:
                 self.assertEquals(plan["count"], 11)
-            if plan["current_subscription__plan"] == "test-2":
+            if plan["current_subscription__plan"] == self.test_plan2.id:
                 self.assertEquals(plan["count"], 1)
 
     def test_active_plan_summary(self):
         for plan in Customer.objects.active_plan_summary():
-            if plan["current_subscription__plan"] == "test":
+            if plan["current_subscription__plan"] == self.test_plan.id:
                 self.assertEquals(plan["count"], 10)
-            if plan["current_subscription__plan"] == "test-2":
+            if plan["current_subscription__plan"] == self.test_plan2.id:
                 self.assertEquals(plan["count"], 1)
 
     def test_canceled_plan_summary(self):
         for plan in Customer.objects.canceled_plan_summary_for(2013, 1):
-            if plan["current_subscription__plan"] == "test":
+            if plan["current_subscription__plan"] == self.test_plan.id:
                 self.assertEquals(plan["count"], 1)
-            if plan["current_subscription__plan"] == "test-2":
+            if plan["current_subscription__plan"] == self.test_plan2.id:
                 self.assertEquals(plan["count"], 0)
 
     def test_churn(self):

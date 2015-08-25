@@ -92,7 +92,7 @@ def runtests(*test_args):
         test_args = ["tests"]
 
     failures = runner_class(
-        verbosity=1, interactive=True, failfast=False).run_tests(test_args)
+        verbosity=1, interactive=True, failfast=True).run_tests(test_args)
     sys.exit(failures)
 
 

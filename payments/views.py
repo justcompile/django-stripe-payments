@@ -20,7 +20,8 @@ from .models import (
     Customer,
     CurrentSubscription,
     Event,
-    EventProcessingException
+    EventProcessingException,
+    PaymentPlan
 )
 
 
@@ -28,10 +29,13 @@ class PaymentsContextMixin(object):
 
     def get_context_data(self, **kwargs):
         context = super(PaymentsContextMixin, self).get_context_data(**kwargs)
+
+        plans = PaymentPlan.objects.all()
+
         context.update({
             "STRIPE_PUBLIC_KEY": app_settings.STRIPE_PUBLIC_KEY,
-            "PLAN_CHOICES": app_settings.PLAN_CHOICES,
-            "PAYMENT_PLANS": app_settings.PAYMENTS_PLANS
+            "PLAN_CHOICES": {plan.key: plan for plan in plans},
+            "PAYMENT_PLANS": plans
         })
         return context
 

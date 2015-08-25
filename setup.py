@@ -13,9 +13,9 @@ def read(*parts):
 PACKAGE = "payments"
 NAME = "django-stripe-payments"
 DESCRIPTION = "a payments Django app for Stripe"
-AUTHOR = "Pinax Team"
+AUTHOR = "Forked By Richard Hayes from Pinax Team"
 AUTHOR_EMAIL = "team@pinaxproject.com"
-URL = "https://github.com/pinax/django-stripe-payments"
+URL = "https://github.com/justcompile/django-stripe-payments"
 
 
 setup(
@@ -24,7 +24,7 @@ setup(
     author_email=AUTHOR_EMAIL,
     description=DESCRIPTION,
     long_description=read("README.rst"),
-    version="2.0.0",
+    version="2.1.0",
     license="MIT",
     url=URL,
     packages=find_packages(),
