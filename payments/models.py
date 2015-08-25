@@ -307,6 +307,12 @@ class PaymentPlan(models.Model):
     interval = models.CharField(max_length=10, choices=INTERVAL_CHOICES, null=True, blank=True)
     currency = models.CharField(max_length=3, default='usd', null=True, blank=True)
     trial_period_days = models.IntegerField(default=None, blank=True, null=True)
+    created = models.DateTimeField(auto_now_add=True)
+    last_modified = models.DateTimeField(auto_now=True)
+    last_synced = models.DateTimeField(blank=True, null=True, default=None)
+
+    def __unicode__(self):
+        return self.name
 
 
 def plan_from_stripe_id(stripe_id):

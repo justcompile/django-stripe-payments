@@ -1,4 +1,4 @@
-from django.contrib import admin
+from django.contrib import admin, messages
 from django.db.models.fields import FieldDoesNotExist
 
 from .models import (
@@ -9,8 +9,10 @@ from .models import (
     EventProcessingException,
     Invoice,
     InvoiceItem,
+    PaymentPlan,
     Transfer
 )
+from payments.management.commands.init_plans import sync_plan
 from .utils import get_user_model
 
 
@@ -269,6 +271,36 @@ admin.site.register(
     inlines=[InvoiceItemInline]
 )
 
+
+def sync_plans(modeladmin, request, queryset):
+    successful = []
+
+    for plan in queryset:
+        try:
+            sync_plan(plan)
+            successful.append(plan.name)
+        except Exception as e:
+            messages.add_message(request, messages.ERROR, u'Unable to sync {0}: {1}'.format(plan.name, e))
+
+    if successful:
+        messages.add_message(request, messages.SUCCESS, u'Successfully sync\'d: {}'.format(u', '.join(successful)))
+
+sync_plans.short_description = "Synchronise Plans with Stripe"
+
+admin.site.register(
+    PaymentPlan,
+    actions=[
+        sync_plans
+    ],
+    exclude=['last_synced'],
+    list_display=[
+        'name',
+        'price',
+        'currency',
+        'last_modified',
+        'last_synced'
+    ]
+)
 
 admin.site.register(
     Transfer,

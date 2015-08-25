@@ -167,6 +167,9 @@ class Migration(migrations.Migration):
                 ('interval', models.CharField(blank=True, max_length=10, null=True, choices=[(b'month', b'Monthly')])),
                 ('currency', models.CharField(default=b'usd', max_length=3, null=True, blank=True)),
                 ('trial_period_days', models.IntegerField(default=None, null=True, blank=True)),
+                ('created', models.DateTimeField(auto_now_add=True)),
+                ('last_modified', models.DateTimeField(auto_now=True)),
+                ('last_synced', models.DateTimeField(default=None, null=True, blank=True)),
             ],
             options={
             },
